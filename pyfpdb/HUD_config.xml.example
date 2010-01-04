@@ -549,7 +549,7 @@ Left-Drag to Move"
                 <location seat="2" x="721" y="330"> </location>
                 <location seat="3" x="558" y="496"> </location>
                 <location seat="4" x="302" y="498"> </location>
-                <location seat="5" x="150" y="167">  </location>
+                <location seat="5" x="168" y="349">  </location>
                 <location seat="6" x="220" y="208">  </location>
                 <location common="1" x="400" y="325"> </location>
             </layout>
