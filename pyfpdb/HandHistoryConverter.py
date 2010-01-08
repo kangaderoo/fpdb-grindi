@@ -54,7 +54,8 @@ class HandHistoryConverter():
     # codepage indicates the encoding of the text file.
     # cp1252 is a safe default
     # "utf_8" is more likely if there are funny characters
-    codepage = "cp1252"
+    # codepage = "cp1252"
+    codepage = "utf8"
 
 
     def __init__(self, in_path = '-', out_path = '-', follow=False, index=0, autostart=True, starsArchive=False):
