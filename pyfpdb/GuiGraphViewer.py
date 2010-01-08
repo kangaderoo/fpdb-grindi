@@ -126,6 +126,12 @@ class GuiGraphViewer (threading.Thread):
             print "***Error: "+err[2]+"("+str(err[1])+"): "+str(sys.exc_info()[1])
             raise
 
+    def tohex(self, s):
+        _name = ""
+        for i in range(len(s)):
+             _name = "%s%x" % (_name, int(ord(s[i])))
+        return _name
+        
     def generateGraph(self, widget, data):
         try:
             self.clearGraphData()
@@ -145,7 +151,7 @@ class GuiGraphViewer (threading.Thread):
                 if sites[site] == True:
                     sitenos.append(siteids[site])
                     c = self.db.get_cursor()
-                    c.execute(self.sql.query['getPlayerId'], (heroes[site],))
+                    c.execute(self.sql.query['getPlayerId'], (self.tohex(heroes[site]),))
                     result = c.fetchall()
                     if len(result) == 1:
                         playerids.append( int(result[0][0]) )

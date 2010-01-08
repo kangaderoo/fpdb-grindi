@@ -23,6 +23,7 @@ import gtk
 import os
 import sys
 from time import time, strftime
+import re
 
 import Card
 import fpdb_import
@@ -34,6 +35,23 @@ colalias,colshow,colheading,colxalign,colformat,coltype = 0,1,2,3,4,5
 ranks = {'x':0, '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 'T':10, 'J':11, 'Q':12, 'K':13, 'A':14}
 
 class GuiPlayerStats (threading.Thread):
+
+    re_CodeHex    = re.compile ("""
+        (?P<HEX>\S{2})""",
+        re.MULTILINE|re.VERBOSE)
+       
+    def tohex(self, s):
+        _name = ""
+        for i in range(len(s)):
+             _name = "%s%x" % (_name, int(ord(s[i])))
+        return _name
+
+    def fromhex(self, s):
+        m = self.re_CodeHex.finditer(s)
+        _name = ""
+        for i in m:
+            _name = "%s%s" % (_name, chr(int(i.group('HEX'),16)))
+        return _name
 
     def __init__(self, config, querylist, mainwin, debug=True):
         self.debug = debug
@@ -171,6 +189,7 @@ class GuiPlayerStats (threading.Thread):
         self.stats_frame.add(self.stats_vbox)
         self.fillStatsFrame(self.stats_vbox)
 
+
     def fillStatsFrame(self, vbox):
         sites = self.filters.getSites()
         heroes = self.filters.getHeroes()
@@ -189,7 +208,7 @@ class GuiPlayerStats (threading.Thread):
                 sitenos.append(siteids[site])
                 # Nasty hack to deal with multiple sites + same player name -Eric
                 que = self.sql.query['getPlayerId'] + " AND siteId=%d" % siteids[site]
-                self.cursor.execute(que, (heroes[site],))
+                self.cursor.execute(que, (self.tohex(heroes[site]),))
                 result = self.db.cursor.fetchall()
                 if len(result) == 1:
                     playerids.append(result[0][0])
@@ -396,6 +415,8 @@ class GuiPlayerStats (threading.Thread):
                             value = 'SB'
                         elif value == '0':
                             value = 'Btn'
+                    if column[colalias] == 'pname':
+                        value = self.fromhex(value)
                 else:
                     if column[colalias] == 'game':
                         if holecards:

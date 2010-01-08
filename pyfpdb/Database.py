@@ -183,6 +183,23 @@ class Database:
     # To add an index:
     # create index indexname on tablename (col);
 
+    # Static regexes
+    re_CodeHex    = re.compile ("""
+        (?P<HEX>\S{2})""",
+        re.MULTILINE|re.VERBOSE)
+       
+    def tohex(self, s):
+        _name = ""
+        for i in range(len(s)):
+             _name = "%s%x" % (_name, int(ord(s[i])))
+        return _name
+
+    def fromhex(self, s):
+        m = self.re_CodeHex.finditer(s)
+        _name = ""
+        for i in m:
+            _name = "%s%s" % (_name, chr(int(i.group('HEX'),16)))
+        return _name
 
     def __init__(self, c, sql = None): 
         log.info("Creating Database instance, sql = %s" % sql)
@@ -538,8 +555,10 @@ class Database:
             if (playerid == hero_id and h_hud_style != 'S') or (playerid != hero_id and hud_style != 'S'):
                 t_dict = {}
                 for name, val in zip(colnames, row):
-                    t_dict[name.lower()] = val
-#                    print t_dict
+                    if name.lower() == 'screen_name':
+                        t_dict[name.lower()] = self.fromhex(val)
+                    else:
+                        t_dict[name.lower()] = val
                 stat_dict[t_dict['player_id']] = t_dict
 
         return stat_dict
@@ -583,9 +602,15 @@ class Database:
                     for name, val in zip(colnames, row):
                         if not playerid in stat_dict:
                             stat_dict[playerid] = {}
-                            stat_dict[playerid][name.lower()] = val
+                            if name.lower() == 'screen_name':
+                                stat_dict[playerid][name.lower()] = self.fromhex(val)
+                            else:
+                                stat_dict[playerid][name.lower()] = val
                         elif not name.lower() in stat_dict[playerid]:
-                            stat_dict[playerid][name.lower()] = val
+                            if name.lower() == 'screen_name':
+                                stat_dict[playerid][name.lower()] = self.fromhex(val)
+                            else:
+                                stat_dict[playerid][name.lower()] = val
                         elif name.lower() not in ('hand_id', 'player_id', 'seat', 'screen_name', 'seats'):
                             stat_dict[playerid][name.lower()] += val
                     n += 1
@@ -602,7 +627,7 @@ class Database:
             
     def get_player_id(self, config, site, player_name):
         c = self.connection.cursor()
-        c.execute(self.sql.query['get_player_id'], (player_name, site))
+        c.execute(self.sql.query['get_player_id'], (self.tohex(player_name), site))
         row = c.fetchone()
         if row:
             return row[0]
@@ -617,7 +642,10 @@ class Database:
         c = self.get_cursor()
         c.execute(self.sql.query['get_player_names'], (like_player_name, site_id, site_id))
         rows = c.fetchall()
-        return rows
+        _rows = []
+        for m in range(len(rows)):
+        	_rows.append((self.fromhex(rows[m][0]),))
+        return _rows
             
     #returns the SQL ids of the names given in an array
     # TODO: if someone gets industrious, they should make the parts that use the output of this function deal with a dict
@@ -640,11 +668,14 @@ class Database:
 
     def recognisePlayerIDs(self, names, site_id):
         c = self.get_cursor()
-        q = "SELECT name,id FROM Players WHERE siteid=%d and (name=%s)" %(site_id, " OR name=".join([self.sql.query['placeholder'] for n in names]))
-        c.execute(q, names) # get all playerids by the names passed in
+        _names = []
+        for m in range(len(names)):
+        	_names.append(self.tohex(names[m]))
+        q = "SELECT name,id FROM Players WHERE siteid=%d and (name=%s)" %(site_id, " OR name=".join([self.sql.query['placeholder'] for n in _names]))
+        c.execute(q, _names) # get all playerids by the names passed in
         ids = dict(c.fetchall()) # convert to dict
-        if len(ids) != len(names):
-            notfound = [n for n in names if n not in ids] # make list of names not in database
+        if len(ids) != len(_names):
+            notfound = [n for n in _names if n not in ids] # make list of names not in database
             if notfound: # insert them into database
                 q_ins = "INSERT INTO Players (name, siteId) VALUES (%s, "+str(site_id)+")"
                 q_ins = q_ins.replace('%s', self.sql.query['placeholder'])
@@ -656,7 +687,7 @@ class Database:
                 for n,id in tmp: # put them all into the same dict
                     ids[n] = id
         # return them in the SAME ORDER that they came in in the names argument, rather than the order they came out of the DB
-        return [ids[n] for n in names]
+        return [ids[n] for n in _names]
     #end def recognisePlayerIDs
 
     # Here's a version that would work if it wasn't for the fact that it needs to have the output in the same order as input
@@ -1847,6 +1878,7 @@ class Database:
 
     def insertPlayer(self, name, site_id):
         result = None
+        _name = self.tohex(name)
         c = self.get_cursor()
         q = "SELECT name, id FROM Players WHERE siteid=%s and name=%s"
         q = q.replace('%s', self.sql.query['placeholder'])
@@ -1860,12 +1892,12 @@ class Database:
 
         #print "DEBUG: name: %s site: %s" %(name, site_id)
 
-        c.execute (q, (site_id, name))
+        c.execute (q, (site_id, _name))
 
         tmp = c.fetchone()
         if (tmp == None): #new player
             c.execute ("INSERT INTO Players (name, siteId) VALUES (%s, %s)".replace('%s',self.sql.query['placeholder'])
-                      ,(name, site_id))
+                      ,(_name, site_id))
             #Get last id might be faster here.
             #c.execute ("SELECT id FROM Players WHERE name=%s", (name,))
             result = self.get_last_insert_id(c)
