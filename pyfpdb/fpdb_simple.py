@@ -472,7 +472,10 @@ def parseActionLine(base, isTourney, line, street, playerIDs, names, action_type
     (line, allIn) = goesAllInOnThisLine(line)
     atype = parseActionType(line)
     playerno = recognisePlayerNo(line, names, atype)
-    amount = parseActionAmount(line, atype, isTourney)
+    for m in names:    # Remove the name from the line, just in case the name holds the $ or eur sign
+        if line.find(m) > -1:
+            _line = line.replace(m,'')
+    amount = parseActionAmount(_line, atype, isTourney)
 
     action_types[street][playerno].append(atype)
     allIns[street][playerno].append(allIn)
@@ -689,7 +692,8 @@ def parseHandStartTime(topline):
 def findName(line):
     pos1 = line.find(":") + 2
     pos2 = line.rfind("(") - 1
-    return unicode(line[pos1:pos2], LOCALE_ENCODING)
+    return line[pos1:pos2]
+#    return unicode(line[pos1:pos2], LOCALE_ENCODING)
 
 def parseNames(lines):
     return [findName(line) for line in lines]
@@ -976,7 +980,8 @@ def recogniseTourneyTypeId(db, siteId, tourneySiteId, buyin, fee, knockout, rebu
 def recognisePlayerNo(line, names, atype):
     #print "recogniseplayerno, names:",names
     for i in xrange(len(names)):
-        encodedName = names[i].encode(LOCALE_ENCODING)
+#        encodedName = names[i].encode(LOCALE_ENCODING)
+        encodedName = names[i]
         if (atype=="unbet"):
             if (line.endswith(encodedName)):
                 return (i)
