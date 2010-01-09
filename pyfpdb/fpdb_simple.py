@@ -475,6 +475,7 @@ def parseActionLine(base, isTourney, line, street, playerIDs, names, action_type
     for m in names:    # Remove the name from the line, just in case the name holds the $ or eur sign
         if line.find(m) > -1:
             _line = line.replace(m,'')
+            break
     amount = parseActionAmount(_line, atype, isTourney)
 
     action_types[street][playerno].append(atype)
@@ -904,12 +905,17 @@ def recogniseGametypeID(backend, db, cursor, topline, smallBlindLine, site_id, c
             if base=="hold":
                 if smallBlindLine==topline:
                     raise FpdbError("invalid small blind line")
-                elif isTourney:
-                    pos=smallBlindLine.rfind(" ")+1
-                    small_blind=int(smallBlindLine[pos:])
                 else:
-                    pos=smallBlindLine.rfind("$")+1
-                    small_blind=float2int(smallBlindLine[pos:])
+                    if (smallBlindLine.endswith(" and is all-in")):
+                        smallBlindLine=smallBlindLine[:-14]
+                    elif (smallBlindLine.endswith(", and is all in")):
+                        smallBlindLine=smallBlindLine[:-15]
+                    if isTourney:
+                        pos=smallBlindLine.rfind(" ")+1
+                        small_blind=int(smallBlindLine[pos:])
+                    else:
+                        pos=smallBlindLine.rfind("$")+1
+                        small_blind=float2int(smallBlindLine[pos:])
             else:
                 small_blind=0
             result = db.insertGameTypes( (site_id, type, base, category, limit_type, hiLo
