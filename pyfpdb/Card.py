@@ -64,7 +64,7 @@ def twoStartCardString(card):
     """ Function to convert an int representing 2 holdem hole cards (as created by twoStartCards)
         into a string like AQo """
     ret = 'xx'
-    if card > 0:
+    if card > -1:
         s = ('2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A')
         x = card / 13
         y = card - 13 * x
@@ -102,7 +102,7 @@ def fourStartCards(value1, suit1, value2, suit2, value3, suit3, value4, suit4):
         # - 13C2 * 13C2 = 6084 possibilities
         # Needless to say they won't fit on a 13x13 grid.
         # The actual number of hands in each class is far greater
-    return(0)
+    return(-28)
 
 def cardFromValueSuit(value, suit):
     """ 0=none, 1-13=2-Ah 14-26=2-Ad 27-39=2-Ac 40-52=2-As """

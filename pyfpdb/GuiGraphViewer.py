@@ -151,7 +151,11 @@ class GuiGraphViewer (threading.Thread):
                 if sites[site] == True:
                     sitenos.append(siteids[site])
                     c = self.db.get_cursor()
-                    c.execute(self.sql.query['getPlayerId'], (self.tohex(heroes[site]),))
+                    # Nasty hack to deal with multiple sites + same player name -Eric
+                    que = self.sql.query['getPlayerId'] + " AND siteId=%d" % siteids[site]
+                    #self.cursor.execute(que, (self.tohex(heroes[site]),))
+                    #result = self.db.cursor.fetchall()
+                    c.execute(que, (self.tohex(heroes[site]),))
                     result = c.fetchall()
                     if len(result) == 1:
                         playerids.append( int(result[0][0]) )
