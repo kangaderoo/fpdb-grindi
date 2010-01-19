@@ -21,7 +21,7 @@ pygtk.require('2.0')
 import gtk
 import os
 from time import time, strftime
-    
+import NameConv    
 import fpdb_import
 import Database
 import Filters
@@ -143,12 +143,6 @@ class GuiPositionalStats (threading.Thread):
         self.stats_frame.add(self.stats_vbox)
         self.fillStatsFrame(self.stats_vbox)
 
-    def tohex(self, s):
-        _name = ""
-        for i in range(len(s)):
-             _name = "%s%x" % (_name, int(ord(s[i])))
-        return _name
-
     def fillStatsFrame(self, vbox):
         sites = self.filters.getSites()
         heroes = self.filters.getHeroes()
@@ -163,7 +157,7 @@ class GuiPositionalStats (threading.Thread):
         for site in sites:
             if sites[site] == True:
                 sitenos.append(siteids[site])
-                self.cursor.execute(self.sql.query['getPlayerId'], (self.tohex(heroes[site]),))
+                self.cursor.execute(self.sql.query['getPlayerId'], (NameConv.tohex(heroes[site]),))
                 result = self.db.cursor.fetchall()
                 if len(result) == 1:
                     playerids.append(result[0][0])

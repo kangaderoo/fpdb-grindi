@@ -30,28 +30,13 @@ import fpdb_import
 import Database
 import fpdb_db
 import Filters
+import NameConv
 
 colalias,colshow,colheading,colxalign,colformat,coltype = 0,1,2,3,4,5
 ranks = {'x':0, '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, 'T':10, 'J':11, 'Q':12, 'K':13, 'A':14}
 
 class GuiPlayerStats (threading.Thread):
 
-    re_CodeHex    = re.compile ("""
-        (?P<HEX>\S{2})""",
-        re.MULTILINE|re.VERBOSE)
-       
-    def tohex(self, s):
-        _name = ""
-        for i in range(len(s)):
-             _name = "%s%x" % (_name, int(ord(s[i])))
-        return _name
-
-    def fromhex(self, s):
-        m = self.re_CodeHex.finditer(s)
-        _name = ""
-        for i in m:
-            _name = "%s%s" % (_name, chr(int(i.group('HEX'),16)))
-        return _name
 
     def __init__(self, config, querylist, mainwin, debug=True):
         self.debug = debug
@@ -82,7 +67,7 @@ class GuiPlayerStats (threading.Thread):
 
         filters_display = { "Heroes"    : True,
                             "Sites"     : True,
-                            "Games"     : False,
+                            "Games"     : True,
                             "Limits"    : True,
                             "LimitSep"  : True,
                             "LimitType" : True,
@@ -199,6 +184,7 @@ class GuiPlayerStats (threading.Thread):
         seats  = self.filters.getSeats()
         groups = self.filters.getGroups()
         dates = self.filters.getDates()
+        games = self.filters.getGames()
         sitenos = []
         playerids = []
 
@@ -208,7 +194,7 @@ class GuiPlayerStats (threading.Thread):
                 sitenos.append(siteids[site])
                 # Nasty hack to deal with multiple sites + same player name -Eric
                 que = self.sql.query['getPlayerId'] + " AND siteId=%d" % siteids[site]
-                self.cursor.execute(que, (self.tohex(heroes[site]),))
+                self.cursor.execute(que, (NameConv.tohex(heroes[site]),))
                 result = self.db.cursor.fetchall()
                 if len(result) == 1:
                     playerids.append(result[0][0])
@@ -224,9 +210,9 @@ class GuiPlayerStats (threading.Thread):
             print "No limits found"
             return
 
-        self.createStatsTable(vbox, playerids, sitenos, limits, type, seats, groups, dates)
+        self.createStatsTable(vbox, playerids, sitenos, limits, type, seats, groups, dates, games)
 
-    def createStatsTable(self, vbox, playerids, sitenos, limits, type, seats, groups, dates):
+    def createStatsTable(self, vbox, playerids, sitenos, limits, type, seats, groups, dates, games):
         starttime = time()
 
         # Scrolled window for summary table
@@ -242,7 +228,7 @@ class GuiPlayerStats (threading.Thread):
         #   gridnum   - index for grid data structures
         flags = [False, self.filters.getNumHands(), 0]
         self.addGrid(swin, 'playerDetailedStats', flags, playerids
-                    ,sitenos, limits, type, seats, groups, dates)
+                    ,sitenos, limits, type, seats, groups, dates, games)
 
         # Separator
         vbox2 = gtk.VBox(False, 0)
@@ -262,7 +248,7 @@ class GuiPlayerStats (threading.Thread):
         flags[0] = True
         flags[2] = 1
         self.addGrid(swin, 'playerDetailedStats', flags, playerids
-                    ,sitenos, limits, type, seats, groups, dates)
+                    ,sitenos, limits, type, seats, groups, dates, games)
 
         self.db.rollback()
         print "Stats page displayed in %4.2f seconds" % (time() - starttime)
@@ -336,7 +322,7 @@ class GuiPlayerStats (threading.Thread):
             print "***sortcols error: " + str(sys.exc_info()[1])
             print "\n".join( [e[0]+':'+str(e[1])+" "+e[2] for e in err] )
 
-    def addGrid(self, vbox, query, flags, playerids, sitenos, limits, type, seats, groups, dates):
+    def addGrid(self, vbox, query, flags, playerids, sitenos, limits, type, seats, groups, dates, games):
         counter = 0
         row = 0
         sqlrow = 0
@@ -344,7 +330,7 @@ class GuiPlayerStats (threading.Thread):
         else:          holecards,grid = flags[0],flags[2]
 
         tmp = self.sql.query[query]
-        tmp = self.refineQuery(tmp, flags, playerids, sitenos, limits, type, seats, groups, dates)
+        tmp = self.refineQuery(tmp, flags, playerids, sitenos, limits, type, seats, groups, dates, games)
         self.cursor.execute(tmp)
         result = self.cursor.fetchall()
         colnames = [desc[0].lower() for desc in self.cursor.description]
@@ -449,7 +435,7 @@ class GuiPlayerStats (threading.Thread):
         
     #end def addGrid(self, query, vars, playerids, sitenos, limits, type, seats, groups, dates):
 
-    def refineQuery(self, query, flags, playerids, sitenos, limits, type, seats, groups, dates):
+    def refineQuery(self, query, flags, playerids, sitenos, limits, type, seats, groups, dates, games):
         having = ''
         if not flags:
             holecards = False
@@ -486,6 +472,20 @@ class GuiPlayerStats (threading.Thread):
         query = query.replace("<player_test>", nametest)
         query = query.replace("<playerName>", pname)
         query = query.replace("<havingclause>", having)
+
+        gametest = ""
+        q = []
+        for m in self.filters.display.items():
+            if m[0] == 'Games' and m[1]:
+                for n in games:
+                    if games[n]:
+                        q.append(n)
+                gametest = str(tuple(q))
+                gametest = gametest.replace("L", "")
+                gametest = gametest.replace(",)",")")
+                gametest = gametest.replace("u'","'")
+                gametest = "and gt.category in %s" % gametest
+        query = query.replace("<game_test>", gametest)
 
         if seats:
             query = query.replace('<seats_test>', 'between ' + str(seats['from']) + ' and ' + str(seats['to']))

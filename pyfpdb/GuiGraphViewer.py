@@ -24,6 +24,7 @@ import sys
 import traceback
 from time import *
 #import pokereval
+import NameConv
 
 try:
     import matplotlib
@@ -126,11 +127,6 @@ class GuiGraphViewer (threading.Thread):
             print "***Error: "+err[2]+"("+str(err[1])+"): "+str(sys.exc_info()[1])
             raise
 
-    def tohex(self, s):
-        _name = ""
-        for i in range(len(s)):
-             _name = "%s%x" % (_name, int(ord(s[i])))
-        return _name
         
     def generateGraph(self, widget, data):
         try:
@@ -155,7 +151,7 @@ class GuiGraphViewer (threading.Thread):
                     que = self.sql.query['getPlayerId'] + " AND siteId=%d" % siteids[site]
                     #self.cursor.execute(que, (self.tohex(heroes[site]),))
                     #result = self.db.cursor.fetchall()
-                    c.execute(que, (self.tohex(heroes[site]),))
+                    c.execute(que, (NameConv.tohex(heroes[site]),))
                     result = c.fetchall()
                     if len(result) == 1:
                         playerids.append( int(result[0][0]) )

@@ -38,6 +38,7 @@ from decimal import Decimal
 import string
 import re
 import Queue
+import NameConv
 
 #    pyGTK modules
 
@@ -184,22 +185,6 @@ class Database:
     # create index indexname on tablename (col);
 
     # Static regexes
-    re_CodeHex    = re.compile ("""
-        (?P<HEX>\S{2})""",
-        re.MULTILINE|re.VERBOSE)
-       
-    def tohex(self, s):
-        _name = ""
-        for i in range(len(s)):
-             _name = "%s%x" % (_name, int(ord(s[i])))
-        return _name
-
-    def fromhex(self, s):
-        m = self.re_CodeHex.finditer(s)
-        _name = ""
-        for i in m:
-            _name = "%s%s" % (_name, chr(int(i.group('HEX'),16)))
-        return _name
 
     def __init__(self, c, sql = None): 
         log.info("Creating Database instance, sql = %s" % sql)
@@ -644,7 +629,7 @@ class Database:
         rows = c.fetchall()
         _rows = []
         for m in range(len(rows)):
-        	_rows.append((self.fromhex(rows[m][0]),))
+        	_rows.append((NameConv.fromhex(rows[m][0]),))
         return _rows
             
     #returns the SQL ids of the names given in an array
@@ -670,7 +655,7 @@ class Database:
         c = self.get_cursor()
         _names = []
         for m in range(len(names)):
-        	_names.append(self.tohex(names[m]))
+        	_names.append(NameConv.tohex(names[m]))
         q = "SELECT name,id FROM Players WHERE siteid=%d and (name=%s)" %(site_id, " OR name=".join([self.sql.query['placeholder'] for n in _names]))
         c.execute(q, _names) # get all playerids by the names passed in
         ids = dict(c.fetchall()) # convert to dict
@@ -1878,7 +1863,7 @@ class Database:
 
     def insertPlayer(self, name, site_id):
         result = None
-        _name = self.tohex(name)
+        _name = NameConv.tohex(name)
         c = self.get_cursor()
         q = "SELECT name, id FROM Players WHERE siteid=%s and name=%s"
         q = q.replace('%s', self.sql.query['placeholder'])
