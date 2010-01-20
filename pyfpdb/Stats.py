@@ -64,7 +64,8 @@ re_Percent = re.compile("%$")
 
 # String manipulation
 import codecs
-encoder = codecs.lookup(Configuration.LOCALE_ENCODING)
+#encoder = codecs.lookup(Configuration.LOCALE_ENCODING)
+encoder = codecs.lookup('utf-8')
 
 def do_tip(widget, tip):
     (_tip, _len) = encoder.encode(tip)

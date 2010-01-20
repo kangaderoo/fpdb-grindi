@@ -476,6 +476,8 @@ def parseActionLine(base, isTourney, line, street, playerIDs, names, action_type
         if line.find(m) > -1:
             _line = line.replace(m,'')
             break
+        else:
+        	_line = line
     amount = parseActionAmount(_line, atype, isTourney)
 
     action_types[street][playerno].append(atype)
