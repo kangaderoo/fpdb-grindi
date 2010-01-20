@@ -692,8 +692,7 @@ def parseHandStartTime(topline):
 def findName(line):
     pos1 = line.find(":") + 2
     pos2 = line.rfind("(") - 1
-    return line[pos1:pos2]
-#    return unicode(line[pos1:pos2], LOCALE_ENCODING)
+    return unicode(line[pos1:pos2], LOCALE_ENCODING)
 
 def parseNames(lines):
     return [findName(line) for line in lines]
@@ -980,8 +979,7 @@ def recogniseTourneyTypeId(db, siteId, tourneySiteId, buyin, fee, knockout, rebu
 def recognisePlayerNo(line, names, atype):
     #print "recogniseplayerno, names:",names
     for i in xrange(len(names)):
-#        encodedName = names[i].encode(LOCALE_ENCODING)
-        encodedName = names[i]
+        encodedName = names[i].encode(LOCALE_ENCODING)
         if (atype=="unbet"):
             if (line.endswith(encodedName)):
                 return (i)
